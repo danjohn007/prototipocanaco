@@ -25,7 +25,7 @@ include __DIR__ . '/../partials/header.php';
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form action="/afiliacion" method="POST" enctype="multipart/form-data">
+                    <form action="<?php echo Config::url('afiliacion'); ?>" method="POST" enctype="multipart/form-data">
                         
                         <!-- Personal Information -->
                         <div class="row mb-4">

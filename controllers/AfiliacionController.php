@@ -1,8 +1,15 @@
 <?php
 require_once __DIR__ . '/../config/demodata.php';
+require_once __DIR__ . '/../config/config.php';
 
 class AfiliacionController {
     private $demo_mode;
+    private $usuario;
+    private $afiliacion;
+    private $sector;
+    private $membresia;
+    private $producto;
+    private $auth;
 
     public function __construct() {
         // Check if database connection is available
@@ -69,8 +76,7 @@ class AfiliacionController {
             if ($this->demo_mode) {
                 // In demo mode, just show success message
                 $_SESSION['success'] = 'Solicitud de afiliación enviada correctamente (MODO DEMO). En el entorno real, esto se guardaría en la base de datos.';
-                header('Location: /afiliacion/confirmacion');
-                exit();
+                Config::redirect('afiliacion/confirmacion');
             }
 
             // Real processing code (original implementation)
@@ -86,15 +92,13 @@ class AfiliacionController {
 
             if (!empty($errors)) {
                 $_SESSION['errors'] = $errors;
-                header('Location: /afiliacion');
-                exit();
+                Config::redirect('afiliacion');
             }
 
             // Check if email already exists
             if ($this->usuario->emailExists($_POST['email'])) {
                 $_SESSION['error'] = 'Este email ya está registrado';
-                header('Location: /afiliacion');
-                exit();
+                Config::redirect('afiliacion');
             }
 
             try {
@@ -125,13 +129,11 @@ class AfiliacionController {
                 $this->processProducts($this->afiliacion->id);
 
                 $_SESSION['success'] = 'Solicitud de afiliación enviada correctamente. Nos pondremos en contacto contigo pronto.';
-                header('Location: /afiliacion/confirmacion');
-                exit();
+                Config::redirect('afiliacion/confirmacion');
 
             } catch (Exception $e) {
                 $_SESSION['error'] = $e->getMessage();
-                header('Location: /afiliacion');
-                exit();
+                Config::redirect('afiliacion');
             }
         }
     }

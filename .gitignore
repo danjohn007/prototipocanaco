@@ -1,0 +1,41 @@
+# Database files
+config/database.sqlite
+*.sqlite
+*.db
+
+# Upload directories
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Temporary files
+tmp/
+*.tmp
+*.temp
+
+# Log files
+*.log
+error.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backup files
+backup_*
+*.backup
+README_OLD.md
+
+# PHP temporary files
+vendor/
+composer.phar
+composer.lock
+
+# Cache files
+cache/
+*.cache
