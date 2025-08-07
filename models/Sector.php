@@ -19,11 +19,22 @@ class Sector {
      * Get all active sectors
      */
     public function getAll() {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE activo = 1 ORDER BY nombre";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
+        try {
+            if ($this->conn === null) {
+                error_log("Database connection is null in Sector::getAll()");
+                return [];
+            }
+            
+            $query = "SELECT * FROM " . $this->table_name . " WHERE activo = 1 ORDER BY nombre";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            // If database query fails, return empty array to avoid breaking the form
+            error_log("Error in Sector::getAll(): " . $e->getMessage());
+            return [];
+        }
     }
 
     /**
