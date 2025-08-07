@@ -23,8 +23,26 @@ class AuthController {
             require_once __DIR__ . '/../config/database.php';
             $database = new Database();
             $conn = $database->getConnection();
-            return $conn !== null;
+            
+            if ($conn === null) {
+                error_log("Database connection failed - using demo authentication");
+                return false;
+            }
+            
+            // Test with a simple query to ensure the connection is truly working
+            $stmt = $conn->prepare("SELECT 1");
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                error_log("Database connection test query failed - using demo authentication");
+                return false;
+            }
+            
+            error_log("Database connection successful - using real authentication");
+            return true;
+            
         } catch (Exception $e) {
+            error_log("Database availability check failed: " . $e->getMessage());
             return false;
         }
     }

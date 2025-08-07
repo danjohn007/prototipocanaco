@@ -1,6 +1,9 @@
 <?php
 $title = 'Formulario de Afiliación - Cámara de Comercio de Querétaro';
 include __DIR__ . '/../partials/header.php';
+
+// Note: $sectores and $membresias variables are provided by AfiliacionController::showForm()
+// The controller prioritizes database data via getAll() methods and only falls back to demo data if needed
 ?>
 
 <div class="hero-section">
