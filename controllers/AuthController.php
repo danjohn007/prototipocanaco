@@ -1,12 +1,30 @@
 <?php
 session_start();
-require_once __DIR__ . '/../models/Usuario.php';
+require_once __DIR__ . '/../config/demodata.php';
 
 class AuthController {
     private $usuario;
+    private $demo_mode;
 
     public function __construct() {
-        $this->usuario = new Usuario();
+        // Check if database connection is available
+        $this->demo_mode = !$this->isDatabaseAvailable();
+        
+        if (!$this->demo_mode) {
+            require_once __DIR__ . '/../models/Usuario.php';
+            $this->usuario = new Usuario();
+        }
+    }
+
+    private function isDatabaseAvailable() {
+        try {
+            require_once __DIR__ . '/../config/database.php';
+            $database = new Database();
+            $conn = $database->getConnection();
+            return $conn !== null;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
@@ -34,13 +52,27 @@ class AuthController {
                 exit();
             }
 
-            if ($this->usuario->login($email, $password)) {
-                $_SESSION['user_id'] = $this->usuario->id;
-                $_SESSION['user_name'] = $this->usuario->nombre;
-                $_SESSION['user_email'] = $this->usuario->email;
-                $_SESSION['user_type'] = $this->usuario->tipo_usuario;
-                $_SESSION['success'] = 'Bienvenido, ' . $this->usuario->nombre;
-                
+            $user = false;
+            if ($this->demo_mode) {
+                $user = DemoData::demoLogin($email, $password);
+                if ($user) {
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['nombre'];
+                    $_SESSION['user_email'] = $user['email'];
+                    $_SESSION['user_type'] = $user['tipo_usuario'];
+                }
+            } else {
+                if ($this->usuario->login($email, $password)) {
+                    $_SESSION['user_id'] = $this->usuario->id;
+                    $_SESSION['user_name'] = $this->usuario->nombre;
+                    $_SESSION['user_email'] = $this->usuario->email;
+                    $_SESSION['user_type'] = $this->usuario->tipo_usuario;
+                    $user = true;
+                }
+            }
+
+            if ($user) {
+                $_SESSION['success'] = 'Bienvenido, ' . $_SESSION['user_name'] . ($this->demo_mode ? ' (MODO DEMO)' : '');
                 header('Location: /admin/dashboard');
                 exit();
             } else {

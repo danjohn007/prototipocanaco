@@ -1,23 +1,39 @@
 <?php
 require_once __DIR__ . '/AuthController.php';
-require_once __DIR__ . '/../models/Afiliacion.php';
-require_once __DIR__ . '/../models/Membresia.php';
-require_once __DIR__ . '/../models/Sector.php';
-require_once __DIR__ . '/../models/Usuario.php';
+require_once __DIR__ . '/../config/demodata.php';
 
 class AdminController {
     private $auth;
-    private $afiliacion;
-    private $membresia;
-    private $sector;
-    private $usuario;
+    private $demo_mode;
 
     public function __construct() {
         $this->auth = new AuthController();
-        $this->afiliacion = new Afiliacion();
-        $this->membresia = new Membresia();
-        $this->sector = new Sector();
-        $this->usuario = new Usuario();
+        
+        // Check if database connection is available
+        $this->demo_mode = !$this->isDatabaseAvailable();
+        
+        if (!$this->demo_mode) {
+            require_once __DIR__ . '/../models/Afiliacion.php';
+            require_once __DIR__ . '/../models/Membresia.php';
+            require_once __DIR__ . '/../models/Sector.php';
+            require_once __DIR__ . '/../models/Usuario.php';
+            
+            $this->afiliacion = new Afiliacion();
+            $this->membresia = new Membresia();
+            $this->sector = new Sector();
+            $this->usuario = new Usuario();
+        }
+    }
+
+    private function isDatabaseAvailable() {
+        try {
+            require_once __DIR__ . '/../config/database.php';
+            $database = new Database();
+            $conn = $database->getConnection();
+            return $conn !== null;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
@@ -36,6 +52,12 @@ class AdminController {
      * Get dashboard statistics
      */
     private function getStatistics() {
+        if ($this->demo_mode) {
+            $stats = DemoData::getStatistics();
+            $stats['recientes'] = DemoData::getAfiliaciones();
+            return $stats;
+        }
+
         $stats = [];
 
         // Affiliation statistics by status
@@ -71,8 +93,32 @@ class AdminController {
         $estatus = $_GET['estatus'] ?? null;
         $sector_id = $_GET['sector'] ?? null;
 
-        $afiliaciones = $this->afiliacion->getAll($estatus, $sector_id);
-        $sectores = $this->sector->getAll();
+        if ($this->demo_mode) {
+            $afiliaciones = DemoData::getAfiliaciones();
+            $sectores = DemoData::getSectores();
+            
+            // Apply demo filters
+            if ($estatus) {
+                $afiliaciones = array_filter($afiliaciones, function($a) use ($estatus) {
+                    return $a['estatus'] === $estatus;
+                });
+            }
+            if ($sector_id) {
+                $sectores_map = [];
+                foreach (DemoData::getSectores() as $s) {
+                    $sectores_map[$s['id']] = $s['nombre'];
+                }
+                $sector_name = $sectores_map[$sector_id] ?? null;
+                if ($sector_name) {
+                    $afiliaciones = array_filter($afiliaciones, function($a) use ($sector_name) {
+                        return $a['sector_nombre'] === $sector_name;
+                    });
+                }
+            }
+        } else {
+            $afiliaciones = $this->afiliacion->getAll($estatus, $sector_id);
+            $sectores = $this->sector->getAll();
+        }
 
         include __DIR__ . '/../views/admin/afiliaciones.php';
     }
@@ -113,10 +159,14 @@ class AdminController {
                 exit();
             }
 
-            if ($this->afiliacion->updateStatus($id, $estatus, $_SESSION['user_id'], $comentarios)) {
-                $_SESSION['success'] = 'Estatus actualizado correctamente';
+            if ($this->demo_mode) {
+                $_SESSION['success'] = 'Estatus actualizado correctamente (MODO DEMO)';
             } else {
-                $_SESSION['error'] = 'Error al actualizar el estatus';
+                if ($this->afiliacion->updateStatus($id, $estatus, $_SESSION['user_id'], $comentarios)) {
+                    $_SESSION['success'] = 'Estatus actualizado correctamente';
+                } else {
+                    $_SESSION['error'] = 'Error al actualizar el estatus';
+                }
             }
 
             header('Location: /admin/afiliacion/' . $id);

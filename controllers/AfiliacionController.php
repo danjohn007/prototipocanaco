@@ -1,34 +1,52 @@
 <?php
-require_once __DIR__ . '/../models/Usuario.php';
-require_once __DIR__ . '/../models/Afiliacion.php';
-require_once __DIR__ . '/../models/Sector.php';
-require_once __DIR__ . '/../models/Membresia.php';
-require_once __DIR__ . '/../models/Producto.php';
-require_once __DIR__ . '/AuthController.php';
+require_once __DIR__ . '/../config/demodata.php';
 
 class AfiliacionController {
-    private $usuario;
-    private $afiliacion;
-    private $sector;
-    private $membresia;
-    private $producto;
-    private $auth;
+    private $demo_mode;
 
     public function __construct() {
-        $this->usuario = new Usuario();
-        $this->afiliacion = new Afiliacion();
-        $this->sector = new Sector();
-        $this->membresia = new Membresia();
-        $this->producto = new Producto();
-        $this->auth = new AuthController();
+        // Check if database connection is available
+        $this->demo_mode = !$this->isDatabaseAvailable();
+        
+        if (!$this->demo_mode) {
+            require_once __DIR__ . '/../models/Usuario.php';
+            require_once __DIR__ . '/../models/Afiliacion.php';
+            require_once __DIR__ . '/../models/Sector.php';
+            require_once __DIR__ . '/../models/Membresia.php';
+            require_once __DIR__ . '/../models/Producto.php';
+            require_once __DIR__ . '/AuthController.php';
+            
+            $this->usuario = new Usuario();
+            $this->afiliacion = new Afiliacion();
+            $this->sector = new Sector();
+            $this->membresia = new Membresia();
+            $this->producto = new Producto();
+            $this->auth = new AuthController();
+        }
+    }
+
+    private function isDatabaseAvailable() {
+        try {
+            require_once __DIR__ . '/../config/database.php';
+            $database = new Database();
+            $conn = $database->getConnection();
+            return $conn !== null;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
     /**
      * Show affiliation form
      */
     public function showForm() {
-        $sectores = $this->sector->getAll();
-        $membresias = $this->membresia->getAll();
+        if ($this->demo_mode) {
+            $sectores = DemoData::getSectores();
+            $membresias = DemoData::getMembresias();
+        } else {
+            $sectores = $this->sector->getAll();
+            $membresias = $this->membresia->getAll();
+        }
         
         include __DIR__ . '/../views/afiliacion/formulario.php';
     }
@@ -38,6 +56,14 @@ class AfiliacionController {
      */
     public function procesar() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if ($this->demo_mode) {
+                // In demo mode, just show success message
+                $_SESSION['success'] = 'Solicitud de afiliación enviada correctamente (MODO DEMO). En el entorno real, esto se guardaría en la base de datos.';
+                header('Location: /afiliacion/confirmacion');
+                exit();
+            }
+
+            // Real processing code (original implementation)
             // Validate required fields
             $required_fields = ['nombre', 'email', 'empresa', 'contacto', 'telefono', 'direccion', 'sector_id', 'membresia_id'];
             $errors = [];
@@ -170,6 +196,10 @@ class AfiliacionController {
      * Get affiliation details
      */
     public function getDetails($id) {
+        if ($this->demo_mode) {
+            return DemoData::getAfiliacionById($id);
+        }
+
         $afiliacion = $this->afiliacion->getById($id);
         if (!$afiliacion) {
             return null;
