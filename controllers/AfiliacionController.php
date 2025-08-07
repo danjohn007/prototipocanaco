@@ -46,6 +46,16 @@ class AfiliacionController {
         } else {
             $sectores = $this->sector->getAll();
             $membresias = $this->membresia->getAll();
+            
+            // Fallback to demo data if database queries return empty results
+            if (empty($sectores)) {
+                error_log("Sector data empty, falling back to demo data");
+                $sectores = DemoData::getSectores();
+            }
+            if (empty($membresias)) {
+                error_log("Membresia data empty, falling back to demo data");
+                $membresias = DemoData::getMembresias();
+            }
         }
         
         include __DIR__ . '/../views/afiliacion/formulario.php';
