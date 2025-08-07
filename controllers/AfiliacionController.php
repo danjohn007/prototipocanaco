@@ -30,8 +30,26 @@ class AfiliacionController {
             require_once __DIR__ . '/../config/database.php';
             $database = new Database();
             $conn = $database->getConnection();
-            return $conn !== null;
+            
+            if ($conn === null) {
+                error_log("Database connection failed - falling back to demo mode");
+                return false;
+            }
+            
+            // Test with a simple query to ensure the connection is truly working
+            $stmt = $conn->prepare("SELECT 1");
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                error_log("Database connection test query failed - falling back to demo mode");
+                return false;
+            }
+            
+            error_log("Database connection successful - using real data");
+            return true;
+            
         } catch (Exception $e) {
+            error_log("Database availability check failed: " . $e->getMessage());
             return false;
         }
     }
@@ -40,22 +58,32 @@ class AfiliacionController {
      * Show affiliation form
      */
     public function showForm() {
-        if ($this->demo_mode) {
+        // Always try to get data from database first
+        $sectores = [];
+        $membresias = [];
+        
+        if (!$this->demo_mode) {
+            try {
+                $sectores = $this->sector->getAll();
+                $membresias = $this->membresia->getAll();
+                
+                // Log successful database retrieval
+                if (!empty($sectores) && !empty($membresias)) {
+                    error_log("Successfully retrieved " . count($sectores) . " sectors and " . count($membresias) . " memberships from database");
+                }
+            } catch (Exception $e) {
+                error_log("Error retrieving data from database: " . $e->getMessage());
+            }
+        }
+        
+        // Only fall back to demo data if database retrieval failed or returned empty results
+        if (empty($sectores)) {
+            error_log("Sector data empty or unavailable, using demo data");
             $sectores = DemoData::getSectores();
+        }
+        if (empty($membresias)) {
+            error_log("Membresia data empty or unavailable, using demo data");
             $membresias = DemoData::getMembresias();
-        } else {
-            $sectores = $this->sector->getAll();
-            $membresias = $this->membresia->getAll();
-            
-            // Fallback to demo data if database queries return empty results
-            if (empty($sectores)) {
-                error_log("Sector data empty, falling back to demo data");
-                $sectores = DemoData::getSectores();
-            }
-            if (empty($membresias)) {
-                error_log("Membresia data empty, falling back to demo data");
-                $membresias = DemoData::getMembresias();
-            }
         }
         
         include __DIR__ . '/../views/afiliacion/formulario.php';

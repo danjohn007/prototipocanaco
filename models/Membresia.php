@@ -29,9 +29,23 @@ class Membresia {
             
             $query = "SELECT * FROM " . $this->table_name . " WHERE activo = 1 ORDER BY costo";
             $stmt = $this->conn->prepare($query);
-            $stmt->execute();
+            
+            if (!$stmt) {
+                error_log("Failed to prepare query in Membresia::getAll(): " . implode(", ", $this->conn->errorInfo()));
+                return [];
+            }
+            
+            $result = $stmt->execute();
+            
+            if (!$result) {
+                error_log("Failed to execute query in Membresia::getAll(): " . implode(", ", $stmt->errorInfo()));
+                return [];
+            }
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $memberships = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            error_log("Retrieved " . count($memberships) . " memberships from database");
+            return $memberships;
+            
         } catch (Exception $e) {
             // If database query fails, return empty array to avoid breaking the form
             error_log("Error in Membresia::getAll(): " . $e->getMessage());
