@@ -1,6 +1,9 @@
 <?php
 session_start();
 
+// Include configuration
+require_once __DIR__ . '/../config/config.php';
+
 /**
  * Simple Router for Chamber of Commerce CRM
  */
@@ -18,7 +21,7 @@ class Router {
 
     public function dispatch() {
         $method = $_SERVER['REQUEST_METHOD'];
-        $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $path = Config::getCurrentPath();
         
         // Remove trailing slash except for root
         if ($path !== '/' && substr($path, -1) === '/') {
@@ -73,7 +76,7 @@ class Router {
     private function notFound() {
         http_response_code(404);
         echo '<h1>404 - Página no encontrada</h1>';
-        echo '<p><a href="/">Volver al inicio</a></p>';
+        echo '<p><a href="' . Config::url() . '">Volver al inicio</a></p>';
     }
 }
 

@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/../config/demodata.php';
+require_once __DIR__ . '/../config/config.php';
 
 class AuthController {
     private $usuario;
@@ -34,8 +35,7 @@ class AuthController {
      */
     public function showLogin() {
         if ($this->isLoggedIn()) {
-            header('Location: /admin/dashboard');
-            exit();
+            Config::redirect('admin/dashboard');
         }
         include __DIR__ . '/../views/admin/login.php';
     }
@@ -50,8 +50,7 @@ class AuthController {
 
             if (empty($email) || empty($password)) {
                 $_SESSION['error'] = 'Email y contraseña son requeridos';
-                header('Location: /admin/login');
-                exit();
+                Config::redirect('admin/login');
             }
 
             $user = false;
@@ -75,12 +74,10 @@ class AuthController {
 
             if ($user) {
                 $_SESSION['success'] = 'Bienvenido, ' . $_SESSION['user_name'] . ($this->demo_mode ? ' (MODO DEMO)' : '');
-                header('Location: /admin/dashboard');
-                exit();
+                Config::redirect('admin/dashboard');
             } else {
                 $_SESSION['error'] = 'Credenciales incorrectas';
-                header('Location: /admin/login');
-                exit();
+                Config::redirect('admin/login');
             }
         }
     }
@@ -90,8 +87,7 @@ class AuthController {
      */
     public function logout() {
         session_destroy();
-        header('Location: /admin/login');
-        exit();
+        Config::redirect('admin/login');
     }
 
     /**
@@ -120,8 +116,7 @@ class AuthController {
      */
     public function requireLogin() {
         if (!$this->isLoggedIn()) {
-            header('Location: /admin/login');
-            exit();
+            Config::redirect('admin/login');
         }
     }
 
@@ -132,8 +127,7 @@ class AuthController {
         $this->requireLogin();
         if (!$this->canAccessAdmin()) {
             $_SESSION['error'] = 'No tienes permisos para acceder a esta sección';
-            header('Location: /admin/login');
-            exit();
+            Config::redirect('admin/login');
         }
     }
 }

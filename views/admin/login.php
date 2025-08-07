@@ -14,7 +14,7 @@ include __DIR__ . '/../partials/header.php';
                     </h4>
                 </div>
                 <div class="card-body p-4">
-                    <form action="/admin/login" method="POST">
+                    <form action="<?php echo Config::url('admin/login'); ?>" method="POST">
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-group">

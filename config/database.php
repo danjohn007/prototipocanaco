@@ -17,6 +17,7 @@ class Database {
     public function getConnection() {
         $this->conn = null;
 
+        // Try MySQL first
         try {
             $this->conn = new PDO(
                 "mysql:host=" . $this->host . ";dbname=" . $this->db_name . ";charset=utf8",
@@ -24,9 +25,22 @@ class Database {
                 $this->password
             );
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            
+            // Test the connection
+            $this->conn->query("SELECT 1");
+            
         } catch(PDOException $exception) {
-            // Log the error instead of echoing it to avoid breaking redirects
-            error_log("Database connection error: " . $exception->getMessage());
+            // Log the MySQL error and try SQLite fallback
+            error_log("MySQL connection error: " . $exception->getMessage());
+            error_log("Falling back to SQLite database");
+            
+            try {
+                require_once __DIR__ . '/database_sqlite.php';
+                $sqlite_db = new DatabaseSQLite();
+                $this->conn = $sqlite_db->getConnection();
+            } catch(Exception $e) {
+                error_log("SQLite fallback failed: " . $e->getMessage());
+            }
         }
 
         return $this->conn;

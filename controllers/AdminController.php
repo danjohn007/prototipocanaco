@@ -1,10 +1,15 @@
 <?php
 require_once __DIR__ . '/AuthController.php';
 require_once __DIR__ . '/../config/demodata.php';
+require_once __DIR__ . '/../config/config.php';
 
 class AdminController {
     private $auth;
     private $demo_mode;
+    private $afiliacion;
+    private $membresia;
+    private $sector;
+    private $usuario;
 
     public function __construct() {
         $this->auth = new AuthController();
@@ -135,8 +140,7 @@ class AdminController {
 
         if (!$afiliacion) {
             $_SESSION['error'] = 'Afiliación no encontrada';
-            header('Location: /admin/afiliaciones');
-            exit();
+            Config::redirect('admin/afiliaciones');
         }
 
         include __DIR__ . '/../views/admin/detalle_afiliacion.php';
@@ -155,8 +159,7 @@ class AdminController {
 
             if (!in_array($estatus, ['pendiente', 'en_proceso', 'validada', 'rechazada'])) {
                 $_SESSION['error'] = 'Estatus inválido';
-                header('Location: /admin/afiliaciones');
-                exit();
+                Config::redirect('admin/afiliaciones');
             }
 
             if ($this->demo_mode) {
@@ -169,8 +172,7 @@ class AdminController {
                 }
             }
 
-            header('Location: /admin/afiliacion/' . $id);
-            exit();
+            Config::redirect('admin/afiliacion/' . $id);
         }
     }
 
